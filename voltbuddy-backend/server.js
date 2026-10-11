@@ -19,12 +19,19 @@ const { errorHandler } = require('./middleware/authMiddleware');
 const app = express();
 
 // CORS configuration to handle multiple deployment URLs
+// CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5001',
+
+  // Current production frontend
+  'https://voltbuddy-smart-home-energy-tracker.vercel.app',
+
+  // Previous frontend deployments
   'https://voltbuddy-smart-home-electricity-bi.vercel.app',
   'https://voltbuddy-smart-home-electricity-bi-five.vercel.app',
   /^https:\/\/voltbuddy-smart-home-electricity-bi.*\.vercel\.app$/,
+
   'file://'
 ];
 
