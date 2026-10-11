@@ -1,0 +1,10 @@
+node_modules
+.env
+.git
+.gitignore
+npm-debug.log
+echo node_modules> .dockerignore
+echo .env>> .dockerignore
+echo .git>> .dockerignore
+echo .gitignore>> .dockerignore
+echo npm-debug.log>> .dockerignore

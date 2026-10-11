@@ -1,0 +1,53 @@
+/* globals.css */
+
+/* Import Tailwind CSS */
+@import "tailwindcss";
+
+/* Import Google Fonts */
+
+
+/* Global CSS Variables for Light and Dark Themes */
+:root {
+  --background: #ffffff;
+  --foreground: #f8f7f7;
+}
+
+/* Define custom theme colors */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'Courier New', monospace;
+}
+
+/* Dark theme settings */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #f4f1f1;
+    --foreground: #ededed;
+  }
+}
+
+/* Apply global styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans); /* Use the DM Sans font */
+}
+/* Skeleton loader styles */
+.skeleton {
+  background-color: #e0e0e0;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #e0e0e0;
+  }
+  50% {
+    background-color: #f0f0f0;
+  }
+  100% {
+    background-color: #e0e0e0;
+  }
+}
