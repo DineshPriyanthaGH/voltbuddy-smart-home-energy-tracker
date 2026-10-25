@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const client = require('prom-client');
 
 const authRouter = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -17,6 +18,29 @@ const NotificationService = require('./services/notificationService');
 const { errorHandler } = require('./middleware/authMiddleware');
 
 const app = express();
+// Prometheus metrics configuration
+const register = new client.Registry();
+
+client.collectDefaultMetrics({
+  register,
+});
+
+// Count HTTP requests by method, route, and status code
+const httpRequestsTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code'],
+  registers: [register],
+});
+
+// Measure HTTP request duration
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code'],
+  buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5],
+  registers: [register],
+});
 
 // CORS configuration to handle multiple deployment URLs
 // CORS configuration
@@ -66,11 +90,55 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Prometheus HTTP metrics middleware
+app.use((req, res, next) => {
+  // Ignore metrics scraping requests to avoid counting Prometheus scrapes
+  if (req.path === '/metrics') {
+    return next();
+  }
+
+  const startTime = process.hrtime.bigint();
+
+  res.on('finish', () => {
+    const durationSeconds =
+      Number(process.hrtime.bigint() - startTime) / 1e9;
+
+    // Use the matched route template instead of raw URLs
+    const route = req.route?.path
+      ? `${req.baseUrl || ''}${req.route.path}`
+      : req.path === '/health'
+        ? '/health'
+        : 'unmatched';
+
+    const labels = {
+      method: req.method,
+      route,
+      status_code: String(res.statusCode),
+    };
+
+    httpRequestsTotal.inc(labels);
+    httpRequestDuration.observe(labels, durationSeconds);
+  });
+
+  next();
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'voltbuddy-backend'
   });
+});
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (error) {
+    console.error('Failed to generate Prometheus metrics:', error);
+    res.status(500).end('Failed to generate metrics');
+  }
 });
 
 mongoose.connect(process.env.MONGODB_URI, {
